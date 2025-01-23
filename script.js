@@ -1,27 +1,19 @@
 async function fetchContributors() {
     try {
-        // Get list of all files in the data directory
-        const response = await fetch('data/');
-        const text = await response.text();
+        // Fetch the list of contributors from the GitHub API
+        const repoUrl = 'https://api.github.com/repos/Jobin-S/contributors-showcase/contents/data';
+        const response = await fetch(repoUrl);
+        const files = await response.json();
         
-        // Create a temporary element to parse the directory listing
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(text, 'text/html');
-        
-        // Get all JSON files from the directory
-        const jsonFiles = Array.from(doc.querySelectorAll('a'))
-            .map(a => a.href)
-            .filter(href => href.endsWith('.json'))
-            .map(href => href.split('/').pop());
-
-        // Fetch data from each JSON file
+        // Filter for JSON files and fetch each contributor's data
+        const jsonFiles = files.filter(file => file.name.endsWith('.json'));
         const contributorsData = await Promise.all(
-            jsonFiles.map(async filename => {
+            jsonFiles.map(async file => {
                 try {
-                    const response = await fetch(`data/${filename}`);
+                    const response = await fetch(file.download_url);
                     return response.json();
                 } catch (error) {
-                    console.error(`Error loading ${filename}:`, error);
+                    console.error(`Error loading ${file.name}:`, error);
                     return null;
                 }
             })
